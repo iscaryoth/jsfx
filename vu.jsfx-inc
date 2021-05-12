@@ -1,0 +1,46 @@
+// vu.jsfx-inc
+
+@init
+function vu_set_response(response) (
+  this.sampletime=response*srate/1000;
+);
+
+function vu_init() (
+  this.sc=6/log(2);
+  this.vu_set_response(50);
+  this.bscnt = 0;
+  this.value = -120;
+  this.peakvol = 0;
+);
+
+function vu_block() (
+  this.bscnt>this.sampletime ?
+  (
+    this.value=log(this.peakvol)*this.sc;
+    this.bscnt=this.peakvol=0;
+  );
+  this.bscnt += samplesblock;
+);
+
+function vu_sample(value) (
+  this.peakvol=max(this.peakvol,abs(value));
+);
+
+function vu_stereo_init() (
+  this.l.vu_init();
+  this.r.vu_init();
+  this.sum.vu_init();
+);
+
+function vu_stereo_sample(value1, value2) (
+  this.l.vu_sample(value1);
+  this.r.vu_sample(value2);
+  this.sum.vu_sample(value1 + value2);
+);
+
+function vu_stereo_block() (
+  this.l.vu_block();
+  this.r.vu_block();
+  this.sum.vu_block();
+);
+

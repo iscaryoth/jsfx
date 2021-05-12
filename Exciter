@@ -12,15 +12,20 @@
 // PLUG-IN YOU RELINQUISH YOUR CLAIM TO SUE IT'S AUTHOR, AS WELL AS THE CLAIM TO
 // ENTRUST SOMEBODY ELSE WITH DOING SO.
 
-desc:Exciter
-desc:Exciter [LOSER]
+desc:Exciter (UI)
+desc:Exciter (UI) [LOSER+iscaryoth]
 //tags: processing exciter distortion
 //author: LOSER
+import ui-lib.jsfx-inc
+import vu.jsfx-inc
+import ui-lib-overlay.jsfx-inc
 
-slider1:2000<100,18000,1>Frequency (Hz)
-slider2:0<0,6,.1>Clip Boost (dB)
-slider3:0<0,100,1>Harmonics (%)
-slider4:-6<-120,0,.1>Mix Back (dB)
+slider1:2000<100,18000,1>-Frequency (Hz)
+slider2:0<0,6,.1>-Clip Boost (dB)
+slider3:0<0,100,1>-Harmonics (%)
+slider4:-6<-120,0,.1>-Mix Back (dB)
+
+options:no_meter
 
 in_pin:left input
 in_pin:right input
@@ -30,6 +35,10 @@ out_pin:right output
 @init
 c_ampDB = 8.65617025;
 cDenorm=10^-30;
+
+freemem = ui_setup(0);
+vu_in.vu_stereo_init();
+vu_out.vu_stereo_init();
 
 @slider
 clipBoost = exp(slider2/c_ampDB);
@@ -47,6 +56,8 @@ b1 = -x;
 s0 = spl0;
 s1 = spl1;
 
+vu_in.vu_stereo_sample(spl0, spl1);
+
 s0 -= (tmplONE = a0*s0 - b1*tmplONE + cDenorm);
 s1 -= (tmprONE = a0*s1 - b1*tmprONE + cDenorm);
 
@@ -61,4 +72,71 @@ s1 -= (tmprTWO = a0*s1 - b1*tmprTWO + cDenorm);
 
 spl0 += s0 * mixBack;
 spl1 += s1 * mixBack;
+
+vu_out.vu_stereo_sample(spl0, spl1);
+
+
+@block
+vu_in.vu_stereo_block();
+vu_out.vu_stereo_block();
+
+
+@gfx
+
+ui_start("main");
+ui_screen() == "main" ? (
+ 
+  ui_color(48, 48, 48);
+  ui_fill();   
+  ui_color(200, 200, 200);
+  
+  ui_split_right(150);
+    ui_color(38, 38, 38);
+    ui_fill();
+    
+    gfx_ui_margins(20, 15, 20, 15);
+    ui_fontsize(13);
+    gfx_ui_meter_numbers(ui_left(), ui_top()+31, ui_width(), ui_height()-63);
+    ui_fontsize(16);
+    gfx_ui_margins(0, 10, 0, 30);
+    
+    ui_split_leftratio(1/2);
+      vu_in.gfx_ui_stereometer("In");
+    ui_split_next();
+      vu_out.gfx_ui_stereometer("Out");
+    ui_pop();
+  ui_pop();
+  
+  
+  ui_split_bottom(50);
+    ui_split_right(15);
+    ui_pop();
+    
+    ui_color(160, 160, 160);
+    ui_align(1,0.5);
+    ui_text("Exciter [LOOSER]");
+  ui_pop();
+  
+  ui_split_leftratio(0.5);
+    ui_split_right(100);
+    
+      ui_split_top(140);
+        gfx_ui_knob(slider1, 100, 18000, 0, "Freq", "%.0f Hz"); 
+      ui_split_next();
+        gfx_ui_knob(slider3, 0, 100, 0, "Harmonics", "%.0f %%");
+      ui_pop();
+      
+    ui_pop();
+  ui_split_next(); 
+    ui_split_left(100);
+    
+      ui_split_top(140);
+        gfx_ui_knob(slider2, 0, 6, 0, "Clip boost", "%.1f dB"); 
+      ui_split_next();
+        gfx_ui_knob(slider4, -120, 0, 0, "Mix back", "%.1f dB");
+      ui_pop();
+      
+    ui_pop(); 
+  ui_pop();
+)
 
