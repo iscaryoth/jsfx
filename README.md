@@ -1,0 +1,3 @@
+# JSFX UI reskinning
+
+This is a very simple attempt at creating a skinned jsfx plugin from [forum thread started by Reznikdesign](https://forum.cockos.com/showthread.php?t=252639). I took the original Exciter and tried applying some graphical candy using slightly modified [jsfx-ui-lib](https://github.com/geraintluff/jsfx-ui-lib). I could not find the original source file to be available on github so that I could fork and apply my changes.
