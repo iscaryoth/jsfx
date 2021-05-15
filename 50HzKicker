@@ -15,14 +15,20 @@
 // Further more is this released under the GPL License:
 // http://www.gnu.org/licenses/gpl.html
 
-desc:50 Hz Kicker
-desc:50 Hz Kicker (Kick Drum Enhancer) [LOSER]
+desc:50 Hz Kicker UI
+desc:50 Hz Kicker (Kick Drum Enhancer) [LOSER+iscaryoth]
 //tags: processing equalizer
 //author: LOSER
 
-slider1:50<10,200,1>Freqency (Hz)
-slider2:-12<-120,12,1>Wet (dB)
-slider3:-3<-120,12,1>Dry (dB)
+import ui-lib.jsfx-inc
+import vu.jsfx-inc
+import ui-lib-overlay.jsfx-inc
+
+slider1:50<10,200,1>-Freqency (Hz)
+slider2:-12<-120,12,1>-Wet (dB)
+slider3:-3<-120,12,1>-Dry (dB)
+
+options:no_meter
 
 in_pin:left input
 in_pin:right input
@@ -38,20 +44,27 @@ a0Env1 = 1.0 + b1Env1;
 b1Env2 = -exp(-30 / srate );
 a0Env2 = 1.0 + b1Env2;
 
+freemem = ui_setup(0);
+vu_in.vu_stereo_init();
+vu_out.vu_stereo_init();
+
+function slider_recalc() (
+  adj = 2*$pi*slider1 / srate;
+  
+  wet = 2^(slider2/6);
+  dry = 2^(slider3/6);
+  
+  gain = 0;
+  tmpDet = 0;
+  tmpEnv1 = 0.1;
+  tmpEnv2 = 0;
+);
+
 @slider
-
-adj = 2*$pi*slider1 / srate;
-
-
-wet = 2^(slider2/6);
-dry = 2^(slider3/6);
-
-gain = 0;
-tmpDet = 0;
-tmpEnv1 = 0.1;
-tmpEnv2 = 0;
+slider_recalc();
 
 @sample
+vu_in.vu_stereo_sample(spl0, spl1);
 
 det = abs(sqrt(tmpDet = a0Det*(spl0+spl1)*2 - b1Det*tmpDet));
 env1 = sqrt(tmpEnv1 = a0Env1*det - b1Env1*tmpEnv1);
@@ -65,3 +78,88 @@ spl0 = sin(pos)*gain*wet + spl0*dry;
 spl1 = sin(pos)*gain*wet + spl1*dry;
 
 pos += adj;
+
+vu_out.vu_stereo_sample(spl0, spl1);
+
+@block
+vu_in.vu_stereo_block();
+vu_out.vu_stereo_block();
+
+
+@gfx 420 300
+
+(gfx_w < 420) ? (gfx_w = 420);
+(gfx_h < 300) ? (gfx_h = 300);
+
+ui_start("main");
+ui_screen() == "main" ? (
+ 
+  ui_color(48, 48, 48);
+  ui_fill();   
+  ui_color(200, 200, 200);
+  
+  ui_split_right(150);
+    ui_color(38, 38, 38);
+    ui_fill();
+    
+    gfx_ui_margins(20, 15, 20, 15);
+    ui_fontsize(13);
+    gfx_ui_meter_numbers(ui_left(), ui_top()+31, ui_width(), ui_height()-63);
+    ui_fontsize(16);
+    gfx_ui_margins(0, 10, 0, 30);
+    
+    ui_split_leftratio(1/2);
+      vu_in.gfx_ui_stereometer("In");
+    ui_split_next();
+      vu_out.gfx_ui_stereometer("Out");
+    ui_pop();
+  ui_pop();
+  
+  
+  ui_split_bottom(50);
+    ui_split_leftratio(0.5);
+      //sprintf(#uix_gfx_size, "%.0fx%.0f", gfx_w,gfx_h);
+      //ui_text(#uix_gfx_size); 
+    ui_split_next();
+    ui_split_right(15);
+    ui_pop();
+    ui_color(160, 160, 160);
+    ui_align(1,0.5);
+    ui_text("50Hz Kicker [LOSER]");
+    ui_pop();
+  ui_pop();
+   
+  ui_split_left(60);
+  ui_pop();    
+  ui_split_right(60);
+  ui_pop(); 
+  
+  ui_split_topratio(0.55); 
+    ui_split_leftratio(0.2);
+    ui_pop();
+    ui_split_rightratio(0.2);
+    ui_pop();
+    slider1 = gfx_ui_knob(slider1, 10, 200, 0, "Freq", "%.1f Hz");
+//  ui_split_next(); 
+  ui_pop();
+
+    ui_split_leftratio(0.5);
+      gfx_ui_margins(5,5,5,5);
+      slider2 = gfx_ui_knob(slider2, -120, 12, 0, "Wet", "%.1f dB"); 
+    ui_split_next();
+      gfx_ui_margins(5,5,5,5);
+      slider3 = gfx_ui_knob(slider3, -120, 12, 0, "Dry", "%.1f dB");
+    ui_pop();
+
+  
+  (slider1 != old_slider1 || 
+   slider2 != old_slider2 ||
+   slider3 != old_slider3) ? (
+      old_slider1 = slider1; 
+      old_slider2 = slider2;
+      old_slider3 = slider3;
+    slider_recalc();
+  )
+)
+
+
