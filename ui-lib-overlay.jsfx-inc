@@ -3,21 +3,20 @@ uix_default_fontface = "Verdana";
 meter_headroom = 6;
 meter_floor = -60;
 
-
-function gfx_ui_knob(slidervar*, low, high, step, title, format) local (result) (
-  ui_push_height(110);
-    ui_split_top(20);
-      ui_color(244, 244, 244);
-      ui_text(title); 
-    ui_pop();
-    ui_split_bottom(20);      
-      ui_color(198, 72, 59);
-      sprintf(#uix_knob_value, format, slidervar);
-      ui_text(#uix_knob_value); 
-    ui_pop();
-    result = control_dial(slidervar, low, high, 0);
+function gfx_ui_knob(slidervar*, low, high, step, title, format) (
+ ui_split_top(10);
+ ui_pop();
+  ui_split_top(30);
+    ui_color(244, 244, 244);
+    ui_text(title); 
   ui_pop();
-  result;
+  ui_split_bottom(20);      
+    ui_color(198, 72, 59);
+    sprintf(#uix_knob_value, format, slidervar);
+    ui_text(#uix_knob_value); 
+  ui_pop();
+  
+  control_dial(slidervar, low, high, 0);
 );
 
 function gfx_gradhelper(x,y,w,fh,h1,h2,r1,g1,b1,r2,g2,b2) local(dd dr dg db s1 s2) (

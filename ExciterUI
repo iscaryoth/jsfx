@@ -86,7 +86,10 @@ vu_in.vu_stereo_block();
 vu_out.vu_stereo_block();
 
 
-@gfx
+@gfx 420 300
+
+(gfx_w < 420) ? (gfx_w = 420);
+(gfx_h < 300) ? (gfx_h = 300);
 
 ui_start("main");
 ui_screen() == "main" ? (
@@ -114,33 +117,41 @@ ui_screen() == "main" ? (
   
   
   ui_split_bottom(50);
+    ui_split_leftratio(0.5);
+      //sprintf(#uix_gfx_size, "%.0fx%.0f", gfx_w,gfx_h);
+      //ui_text(#uix_gfx_size); 
+    ui_split_next();
     ui_split_right(15);
     ui_pop();
     ui_color(160, 160, 160);
     ui_align(1,0.5);
     ui_text("Exciter [LOOSER]");
+    ui_pop();
   ui_pop();
-  
+   
   ui_split_leftratio(0.5);
-    ui_split_right(100);
+    ui_split_left(60);
+    ui_pop();
     
-      ui_split_top(140);
-        slider1 = gfx_ui_knob(slider1, 100, 18000, 0, "Freq", "%.0f Hz"); 
-      ui_split_next();
-        slider3 = gfx_ui_knob(slider3, 0, 100, 0, "Harmonics", "%.0f %%");
-      ui_pop(); 
-      
+    ui_split_topratio(0.5);
+      gfx_ui_margins(5,5,5,5);
+      slider1 = gfx_ui_knob(slider1, 100, 18000, 0, "Freq", "%.0f Hz"); 
+    ui_split_next();
+      gfx_ui_margins(5,5,5,5);
+      slider3 = gfx_ui_knob(slider3, 0, 100, 0, "Harmonics", "%.0f %%");
     ui_pop();
   ui_split_next(); 
-    ui_split_left(100);
+    ui_split_right(60);
+    ui_pop();
     
-      ui_split_top(140);
-        slider2 = gfx_ui_knob(slider2, 0, 6, 0, "Clip boost", "%.1f dB"); 
-      ui_split_next();
-        slider4 = gfx_ui_knob(slider4, -120, 0, 0, "Mix back", "%.1f dB");
-      ui_pop();
-      
-    ui_pop(); 
+    ui_split_topratio(0.5);
+      gfx_ui_margins(5,5,5,5);
+      slider2 = gfx_ui_knob(slider2, 0, 6, 0, "Clip boost", "%.1f dB"); 
+    ui_split_next();
+      gfx_ui_margins(5,5,5,5);
+      slider4 = gfx_ui_knob(slider4, -120, 0, 0, "Mix back", "%.1f dB");
+    ui_pop();
+
   ui_pop();
   
   (slider1 != old_slider1 || 
