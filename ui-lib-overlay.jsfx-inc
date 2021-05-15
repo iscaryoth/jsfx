@@ -4,7 +4,7 @@ meter_headroom = 6;
 meter_floor = -60;
 
 
-function gfx_ui_knob(slidervar*, low, high, step, title, format) (
+function gfx_ui_knob(slidervar*, low, high, step, title, format) local (result) (
   ui_push_height(110);
     ui_split_top(20);
       ui_color(244, 244, 244);
@@ -15,8 +15,9 @@ function gfx_ui_knob(slidervar*, low, high, step, title, format) (
       sprintf(#uix_knob_value, format, slidervar);
       ui_text(#uix_knob_value); 
     ui_pop();
-    slidervar = control_dial(slidervar, low, high, 0);
+    result = control_dial(slidervar, low, high, 0);
   ui_pop();
+  result;
 );
 
 function gfx_gradhelper(x,y,w,fh,h1,h2,r1,g1,b1,r2,g2,b2) local(dd dr dg db s1 s2) (

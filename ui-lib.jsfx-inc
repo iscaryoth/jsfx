@@ -2349,8 +2349,8 @@ function uix_control_dial(value, range_low, range_high, curve_bias, hasDefault, 
 	screenratio = uix_slider_value_to_ratio(value, range_low, range_high, curve_bias);
 
 	radius = min(min(ui_width_retina(), ui_height_retina())/2 - 1, 30*uix_drawconfig_current[9/*uix_DRAWCONFIG:RETINA_SCALING*/]);
-	centrex = (ui_left_retina() + radius) + (ui_width_retina() - radius*2 - 1)*ui_halign();
-	centrey = (ui_top_retina() + radius) + (ui_height_retina() - radius*2 - 1)*ui_valign();
+	centrex = floor((ui_left_retina() + radius) + (ui_width_retina() - radius*2 - 1)*ui_halign());
+	centrey = floor((ui_top_retina() + radius) + (ui_height_retina() - radius*2 - 1)*ui_valign());
 	inner_radius = radius - 2*(1 + ui_retina());
 
 	// Draw arc
@@ -2362,42 +2362,39 @@ function uix_control_dial(value, range_low, range_high, curve_bias, hasDefault, 
 		gfx_blit(uix_control_theme_buffer, 1, 0, 820, 20, 120, 120, centrex - radius + 0.5, centrey - radius + 0.5, radius*2, radius*2);
 		gfx_blit(uix_control_theme_buffer, 1, angle, 820, 200, 120, 120, centrex - radius + 0.5, centrey - radius + 0.5, radius*2, radius*2);
 	) : (
+	
+		// value arc colored
+		ui_color(231, 77, 61);
+		gfx_arc(centrex, centrey, radius, lowangle, angle, 1);
+		gfx_arc(centrex, centrey, radius * 0.99, lowangle, angle, 1);
+		gfx_arc(centrex, centrey, radius * 0.98, lowangle, angle, 1);
+		gfx_arc(centrex, centrey, radius * 0.97, lowangle, angle, 1);
+		gfx_arc(centrex, centrey, radius * 0.96, lowangle, angle, 1);
+		gfx_arc(centrex, centrey, radius * 0.95, lowangle, angle, 1);
+		gfx_arc(centrex, centrey, radius * 0.94, lowangle, angle, 1);
+		gfx_arc(centrex, centrey, radius * 0.93, lowangle, angle, 1);
+	
 		// outer circle
 		ui_color(45, 45, 45);
-		gfx_circle(centrex, centrey, radius, 1, 1);
+		gfx_circle(centrex, centrey, radius * 0.90, 1, 1);
 		
 		// knob itself
 		ui_color(72, 72, 72);
-		gfx_circle(centrex, centrey, radius * 0.93, 1, 1);
+		gfx_circle(centrex, centrey, radius * 0.86, 1, 1);
 	
 		//uix_control_background_enabled_circle(centrex, centrey, radius, "none");
 		uix_control_theme == 2/*uix_THEME:TRON*/ || !linkToLeft ? (
-			uix_control_theme == 1/*uix_THEME:BLACK_AND_WHITE*/ ? (
-				ui_color(0, 0, 0);
-				x1 = centrex + sin(lowangle)*inner_radius;
-				y1 = centrey - cos(lowangle)*inner_radius;
-				x2 = centrex + sin(highangle)*inner_radius;
-				y2 = centrey - cos(highangle)*inner_radius;
-				gfx_circle(x1, y1, 1, 1, 1);
-				gfx_circle(x2, y2, 1, 1, 1);
-			) : (
-				ui_color(131, 184, 206);
-				//uix_thick_arc(centrex, centrey, inner_radius, lowangle, highangle);
-			);
 
-			x1 = centrex + sin(angle)*inner_radius*0.95;
-			y1 = centrey - cos(angle)*inner_radius*0.95;
+			x1 = centrex + sin(angle)*inner_radius*0.9;
+			y1 = centrey - cos(angle)*inner_radius*0.9;
 			x2 = centrex + sin(angle)*inner_radius*0.5;
 			y2 = centrey - cos(angle)*inner_radius*0.5;
 			x2a = centrex + sin(angle + 0.37)*inner_radius*0.65;
 			y2a = centrey - cos(angle + 0.37)*inner_radius*0.65;
 			x2b = centrex + sin(angle - 0.37)*inner_radius*0.65;
 			y2b = centrey - cos(angle - 0.37)*inner_radius*0.65;
-			uix_control_theme == 1/*uix_THEME:BLACK_AND_WHITE*/ ? (
-				ui_color(0, 0, 0);
-			) : (
-				ui_color(231, 77, 61);
-			);
+			
+			ui_color(231, 77, 61);
 			//uix_thick_line(x1, y1, x2, y2);
 			// make a triangle instead of a line
 			gfx_triangle(x1,y1,x2a,y2a,x2b,y2b);
@@ -2406,7 +2403,6 @@ function uix_control_dial(value, range_low, range_high, curve_bias, hasDefault, 
 			gfx_line(x2a, y2a, x2b, y2b, 1);
 			gfx_line(x1, y1, x2b, y2b, 1);
 			
-			uix_thick_arc(centrex, centrey, radius, lowangle, angle);
 		) : (
 			gfx_a = 1;
 			uix_thick_arc(centrex, centrey, inner_radius, lowangle, angle);
