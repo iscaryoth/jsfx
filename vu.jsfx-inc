@@ -1,6 +1,10 @@
 // vu.jsfx-inc
 
 @init
+
+vu.meter_ceil = 6;
+vu.meter_floor = -60;
+
 function vu_set_response(response) (
   this.sampletime=response*srate/1000;
 );
@@ -30,6 +34,9 @@ function vu_stereo_init() (
   this.l.vu_init();
   this.r.vu_init();
   this.sum.vu_init();
+  
+  this.meter_floor = vu.meter_floor;
+  this.meter_ceil = vu.meter_ceil;
 );
 
 function vu_stereo_sample(value1, value2) (

@@ -1,17 +1,15 @@
 @init
 uix_default_fontface = "Verdana";
-meter_headroom = 6;
-meter_floor = -60;
 
 function gfx_ui_knob(slidervar*, low, high, step, title, format) (
- ui_split_top(10);
- ui_pop();
+  ui_split_top(10);
+  ui_pop();
   ui_split_top(30);
-    ui_color(244, 244, 244);
+    ui_color_text();
     ui_text(title); 
   ui_pop();
   ui_split_bottom(20);      
-    ui_color(198, 72, 59);
+    ui_color_accent_dim();
     sprintf(#uix_knob_value, format, slidervar);
     ui_text(#uix_knob_value); 
   ui_pop();
@@ -30,8 +28,15 @@ function gfx_gradhelper(x,y,w,fh,h1,h2,r1,g1,b1,r2,g2,b2) local(dd dr dg db s1 s
   gfx_gradrect(x,y+h1,w,h2-h1, r1 + s1*dr,g1 + s1*dg, b1 + s1*db,1, 0,0,0,0, dr,dg,db,0);
 );
 
+function  gfx_ui_meter_calc_relative_pos(value) local(p) (
+  p = 1 - ((value - vu.meter_ceil) / (vu.meter_floor - vu.meter_ceil));
+  p = max(0, p);
+  p = min(1, p);
+  p;
+);
+
 function gfx_ui_meter(value) local(p h fh) (
-  p = max(0, min(1, 1 - (value < meter_floor ? meter_floor : value - meter_headroom) / (meter_headroom + meter_floor)));
+  p = gfx_ui_meter_calc_relative_pos(value);
   h = ui_height() * p;
   fh = ui_height();
   
@@ -62,7 +67,7 @@ function gfx_ui_stereometer(name) local(sumvalue valueClipped) (
   
   ui_split_bottom(30);
     sumvalue = this.sum.value;
-    valueClipped = (sumvalue < meter_floor ? meter_floor : sumvalue);
+    valueClipped = (sumvalue < vu.meter_floor ? vu.meter_floor : sumvalue);
     sprintf(#uix_meter_value, "%.1f", valueClipped);
     ui_text(#uix_meter_value); 
   ui_pop();
@@ -82,9 +87,11 @@ function gfx_ui_stereometer(name) local(sumvalue valueClipped) (
   ui_pop();
 );
 
+
+
 function gfx_ui_meter_numbers(x,y,w,h) local(i, scale, cv, num, cy, offset) (
   num = 10;
-  scale = meter_floor / num;
+  scale = (vu.meter_floor - vu.meter_ceil) / (num + 1);
   cv = 0;
   i = 1;
   ui_color(140, 140, 140);
@@ -100,3 +107,4 @@ function gfx_ui_meter_numbers(x,y,w,h) local(i, scale, cv, num, cy, offset) (
     i <= num;
   )
 );
+

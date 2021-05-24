@@ -15,6 +15,16 @@ uix_drawconfig_count = 100;
 //uix_drawconfig_currentindex = -1;
 //uix_screen_reservations = 0;
 
+uix_overlay.accent.r = 231;
+uix_overlay.accent.g = 77;
+uix_overlay.accent.b = 61;
+uix_overlay.accent.a = 1;
+
+uix_overlay.text.r = 240;
+uix_overlay.text.g = 240;
+uix_overlay.text.b = 240;
+uix_overlay.text.a = 1;
+
 //uix_reserved_end = 0;
 
 //uix_mousecap_prev = 0;
@@ -496,6 +506,28 @@ function ui_color(r, g, b) (
 	ui_color(r, g, b, 1);
 );
 
+function ui_color_accent() (
+	ui_color(uix_overlay.accent.r, uix_overlay.accent.g, uix_overlay.accent.b, uix_overlay.accent.a);
+);
+
+function ui_color_accent_dim() (
+	ui_color(uix_overlay.accent.r * 0.85, uix_overlay.accent.g * 0.85, uix_overlay.accent.b * 0.85, uix_overlay.accent.a);
+);
+
+function ui_color_accent(r, g, b) (
+	uix_overlay.accent.r = r;
+	uix_overlay.accent.g = g;
+	uix_overlay.accent.b = b;
+	uix_overlay.accent.a = 1;
+);
+
+function ui_color_text() (
+	ui_color(uix_overlay.text.r, uix_overlay.text.g, uix_overlay.text.b, uix_overlay.text.a);
+);
+
+function ui_color_text_dim() (
+	ui_color(uix_overlay.text.r* 0.6, uix_overlay.text.g* 0.6, uix_overlay.text.b* 0.6, uix_overlay.text.a);
+);
 
 function ui_align(halign, valign) (
 	halign >= 0 && halign <= 1 ? uix_drawconfig_current[20/*uix_DRAWCONFIG:HALIGN*/] = halign;
@@ -2240,18 +2272,27 @@ function control_slider_x(value, range_low, range_high) (
 	control_slider_x(value, range_low, range_high, 0);
 );
 
-function uix_control_slider_v(value, range_low, range_high, curve_bias, hasDefault, defaultValue, linkToBottom) local(valueratio, screenratio, state, barheight, 	handlesize) (
+function uix_control_slider_handle_height() ( 16; );
+
+function uix_control_slider_v(value, range_low, range_high, curve_bias, hasDefault, defaultValue, linkToBottom, fill_background) 
+	local(valueratio, screenratio, state, barheight, handle_width, handle_height, i, x1, x2, y1, y2) (
 	// We calculate screenratio first (before updating value) because then any rounding/limiting applied to the value is reflected in the UI
 	screenratio = uix_slider_value_to_ratio(value, range_low, range_high, curve_bias);
 
-	ui_push_width(ui_texth()*2);
-		handlesize = ui_width();
-		uix_control_theme == 2/*uix_THEME:TRON*/ ? (
-			control_background_technical();
-		) : (
-			control_background_inset();
-			control_finish_inset();
+	//ui_push_width(ui_texth()*2);
+	ui_push();
+		handle_width = ui_width();
+		handle_height = uix_control_slider_handle_height();
+
+		fill_background ? (
+			ui_push();
+			  ui_push_width(3);
+			    ui_color(20,20,20);
+			    ui_fill();
+			  ui_pop();
+			ui_pop();
 		);
+
 		state = control_state();
 
 		ui_push();
@@ -2260,29 +2301,42 @@ function uix_control_slider_v(value, range_low, range_high, curve_bias, hasDefau
 				ui_split_bottom(barheight);
 			) : (
 				ui_align(0.5, 1 - screenratio);
-				ui_push_height(handlesize);
-			);
-				uix_control_theme == 2/*uix_THEME:TRON*/ ? (
-					ui_color(121, 173, 185);
-					ui_fill();
-				) : (
-					control_background_enabled(state);
-					control_finish_enabled(state);
+				ui_push_height(handle_height);
+			);				
+				ui_color_accent();
+				
+				i = 0;
+				while(
+					gfx_roundrect(ui_left() + i, ui_top() + i, ui_width() - 2*i, ui_height() - 2*i, 3 - i, 1);
+					i += 1;
+					i < 2;
 				);
+
+				i = -1;
+				while(
+					gfx_line(ui_left() + 0.2 * ui_width(), ui_top() + ui_height()/2 + i, ui_right() - 0.2 * ui_width(), ui_top() + ui_height()/2 + i);
+					i += 1;
+					i < 2;
+				);
+				y1 = ui_bottom();
 			ui_pop();
 		ui_pop();
-		uix_control_theme == 2/*uix_THEME:TRON*/ ? (
-			control_finish_technical();
-		) : (
-			0;
+		
+		fill_background ? (
+			ui_color_accent();
+			x1 = ui_left() + 0.5 * ui_width() - 3;
+			//y1 = ui_top() + (1 - screenratio) * ui_height() + handle_height;
+			y2 = ui_bottom();
+			gfx_rect(x1, y1, 6, y2-y1);
 		);
+
 	ui_pop();
 
 	ui_mouse_down() || ui_drag() ? (
 		screenratio = linkToBottom ? (
 			1 - ui_mouse_yratio()
 		) : (
-			(ui_height() - ui_mouse_y() - handlesize*0.5)/(ui_height() - handlesize);
+			(ui_height() - ui_mouse_y() - handle_height*0.5)/(ui_height() - handle_height);
 		);
 		value = uix_slider_ratio_to_value(screenratio, range_low, range_high, curve_bias);
 	);
@@ -2299,20 +2353,25 @@ function uix_control_slider_v(value, range_low, range_high, curve_bias, hasDefau
 	ui_drag_up() ? uix_undo_point();
 	value;
 );
+
+//uix_control_slider_v(value, range_low, range_high, curve_bias, hasDefault, defaultValue, linkToBottom) (
+//	uix_control_slider_v(value, range_low, range_high, curve_bias, hasDefault, defaultValue, linkToBottom, 1);
+//);
+
 function control_slider_bottom(value, range_low, range_high, curve_bias, default) (
-	uix_control_slider_v(value, range_low, range_high, curve_bias, 1, default, 1);
+	uix_control_slider_v(value, range_low, range_high, curve_bias, 1, default, 1, 1);
 );
 function control_slider_bottom(value, range_low, range_high, curve_bias) (
-	uix_control_slider_v(value, range_low, range_high, curve_bias, 0, 0, 1);
+	uix_control_slider_v(value, range_low, range_high, curve_bias, 0, 0, 1, 1);
 );
 function control_slider_bottom(value, range_low, range_high) (
 	control_slider_bottom(value, range_low, range_high, 0);
 );
 function control_slider_y(value, range_low, range_high, curve_bias, default) (
-	uix_control_slider_v(value, range_low, range_high, curve_bias, 1, default, 0);
+	uix_control_slider_v(value, range_low, range_high, curve_bias, 1, default, 0, 1);
 );
 function control_slider_y(value, range_low, range_high, curve_bias) (
-	uix_control_slider_v(value, range_low, range_high, curve_bias, 0, 0, 0);
+	uix_control_slider_v(value, range_low, range_high, curve_bias, 0, 0, 0, 1);
 );
 function control_slider_y(value, range_low, range_high) (
 	control_slider_y(value, range_low, range_high, 0);
@@ -2359,7 +2418,7 @@ function uix_control_dial(value, range_low, range_high, curve_bias, hasDefault, 
 	angle = lowangle + (highangle - lowangle)*(screenratio*0.98 + 0.01);
 
 	// value arc colored
-	ui_color(231, 77, 61);
+	ui_color_accent();
 	
 	filler = radius;
 	filler_num = 0;
@@ -2390,7 +2449,7 @@ function uix_control_dial(value, range_low, range_high, curve_bias, hasDefault, 
 		x2b = centrex + sin(angle - 0.37)*inner_radius*0.65;
 		y2b = centrey - cos(angle - 0.37)*inner_radius*0.65;
 		
-		ui_color(231, 77, 61);
+		ui_color_accent();
 		//uix_thick_line(x1, y1, x2, y2);
 		// make a triangle instead of a line
 		gfx_triangle(x1,y1,x2a,y2a,x2b,y2b);
@@ -2398,14 +2457,6 @@ function uix_control_dial(value, range_low, range_high, curve_bias, hasDefault, 
 		gfx_line(x1, y1, x2a, y2a, 1);
 		gfx_line(x2a, y2a, x2b, y2b, 1);
 		gfx_line(x1, y1, x2b, y2b, 1);
-		
-		//ui_color(255, 0, 255);
-		//gfx_line(centrex, centrey, x1, y1, 1);
-		
-		//ui_color(255, 0, 255);
-		//gfx_line(centrex-radius, centrey, centrex+radius, centrey);
-		//gfx_line(centrex, centrey-radius, centrex, centrey+radius);
-		//uix_thick_arc(centrex, centrey, radius, lowangle, angle);
 	) : (
 		gfx_a = 1;
 		uix_thick_arc(centrex, centrey, inner_radius, lowangle, angle);
