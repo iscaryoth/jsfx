@@ -1,17 +1,15 @@
 @init
 uix_default_fontface = "Verdana";
-meter_headroom = 6;
-meter_floor = -60;
 
 function gfx_ui_knob(slidervar*, low, high, step, title, format) (
- ui_split_top(10);
- ui_pop();
+  ui_split_top(10);
+  ui_pop();
   ui_split_top(30);
-    ui_color(244, 244, 244);
+    ui_color_text();
     ui_text(title); 
   ui_pop();
   ui_split_bottom(20);      
-    ui_color(198, 72, 59);
+    ui_color_accent_dim();
     sprintf(#uix_knob_value, format, slidervar);
     ui_text(#uix_knob_value); 
   ui_pop();
@@ -30,8 +28,15 @@ function gfx_gradhelper(x,y,w,fh,h1,h2,r1,g1,b1,r2,g2,b2) local(dd dr dg db s1 s
   gfx_gradrect(x,y+h1,w,h2-h1, r1 + s1*dr,g1 + s1*dg, b1 + s1*db,1, 0,0,0,0, dr,dg,db,0);
 );
 
+function  gfx_ui_meter_calc_relative_pos(value) local(p) (
+  p = 1 - ((value - vu.meter_ceil) / (vu.meter_floor - vu.meter_ceil));
+  p = max(0, p);
+  p = min(1, p);
+  p;
+);
+
 function gfx_ui_meter(value) local(p h fh) (
-  p = max(0, min(1, 1 - (value < meter_floor ? meter_floor : value - meter_headroom) / (meter_headroom + meter_floor)));
+  p = gfx_ui_meter_calc_relative_pos(value);
   h = ui_height() * p;
   fh = ui_height();
   
@@ -55,22 +60,77 @@ function gfx_ui_margins(top, right, bottom, left) (
   ui_pop();
 );
 
-function gfx_ui_stereometer(name) local(sumvalue valueClipped) (
+function gfx_ui_metermargins(meter_numbers, sides) (
+	meter_numbers > 0 && meter_numbers < 3 ? (
+		  gfx_ui_margins(0, sides, 0, 22 + sides);
+		) : (meter_numbers == 3 ? (
+		  gfx_ui_margins(0, 22 + sides, 0, sides);
+		));
+);
+
+function gfx_ui_metermargins(meter_numbers) (
+  gfx_ui_metermargins(meter_numbers, 8);  
+);
+
+
+// draw vu meter:
+// - meter numbers:
+//   - 1 - draw numbers on the left, short lines
+//   - 2 - draw numbers on the left, long lines
+//   - 3 - draw line extensions
+function gfx_ui_meter_numbers(meter_numbers)
+	local(x, y, w, h, i, scale, cv, num, cy, offset, x1, x2) (
+  num = 10;
+  scale = (vu.meter_floor - vu.meter_ceil) / (num + 1);
+  cv = 0;
+  i = 1;
+  x = ui_left();
+  y = ui_top();
+  w = ui_width();
+  h = ui_height();
+  x1 = meter_numbers == 3 ? x : x+25;
+  x2 = x+w + (meter_numbers == 1 ? -25 : (meter_numbers == 3 ? -35 : 0));
+  
+  ui_fontsize(13);    
+  ui_color_text_dim();
+  while(
+    cy = y + i * h / (num+1);
+    gfx_line(x1, cy, x2, cy, 1);
+    sprintf(#uix_meter_scale, "%.0f", abs(cv));
+    meter_numbers != 3 ? (
+	 gfx_x = ui_left() + 5;
+	 gfx_y = cy-10;
+	 gfx_drawstr(#uix_meter_scale, 2+4, x + 20, cy+10);
+    );
+    cv += scale;
+    i += 1;
+    i <= num;
+  )
+);
+
+function gfx_ui_stereometer(name, meter_numbers) local(sumvalue valueClipped) (
   ui_split_top(30);
+    gfx_ui_metermargins(meter_numbers, 0);
+    ui_color_text();
     ui_text(name);
   ui_pop();
   
   ui_split_bottom(30);
+    gfx_ui_metermargins(meter_numbers, 0);
+    ui_color_text();
     sumvalue = this.sum.value;
-    valueClipped = (sumvalue < meter_floor ? meter_floor : sumvalue);
+    valueClipped = (sumvalue < vu.meter_floor ? vu.meter_floor : sumvalue);
     sprintf(#uix_meter_value, "%.1f", valueClipped);
     ui_text(#uix_meter_value); 
   ui_pop();
   
-  ui_split_left(10);
-  ui_pop();
-  ui_split_right(10);
-  ui_pop();
+  meter_numbers ? (
+    ui_push();
+	    gfx_ui_meter_numbers(meter_numbers);
+    ui_pop();
+  );
+  gfx_ui_metermargins(meter_numbers);
+  
   gfx_set(0.078,0.078,0.078);
   gfx_rect(ui_left(), ui_top(), ui_width(), ui_height());
   ui_split_leftratio(1/2);
@@ -82,21 +142,70 @@ function gfx_ui_stereometer(name) local(sumvalue valueClipped) (
   ui_pop();
 );
 
-function gfx_ui_meter_numbers(x,y,w,h) local(i, scale, cv, num, cy, offset) (
-  num = 10;
-  scale = meter_floor / num;
-  cv = 0;
-  i = 1;
-  ui_color(140, 140, 140);
-  while(
-    cy = y + i * h / (num+1);
-    gfx_line(x + 35, cy, x+w-25, cy, 1);
-    sprintf(#uix_meter_scale, "%.0f", abs(cv));
-    gfx_x = ui_left() + 5;
-    gfx_y = cy-10;
-    gfx_drawstr(#uix_meter_scale, 2+4, x + 30, cy+10);
-    cv += scale;
-    i += 1;
-    i <= num;
-  )
+function gfx_ui_stereometer_slider(name, value, range_low, range_high, curve_bias, hasDefault, defaultValue, format)
+	local(sumvalue valueClipped p height handle_height) (
+  ui_split_top(30);
+    ui_color_text();
+    ui_text(name);
+  ui_pop();
+  
+  ui_split_bottom(30);
+    ui_color_text();
+    sprintf(#uix_meter_value, format, value);
+    ui_text(#uix_meter_value); 
+  ui_pop();
+  
+  gfx_ui_margins(0, 8, 0, 8);
+
+  ui_push();
+    gfx_ui_margins(0, 10, 0, 10);
+    
+    gfx_set(0.078,0.078,0.078);
+    gfx_rect(ui_left(), ui_top(), ui_width(), ui_height());
+    ui_split_leftratio(1/2);
+	    gfx_ui_margins(1, 0.5,1, 0.5);
+	    gfx_ui_meter(this.l.value);
+    ui_split_next();
+	    gfx_ui_margins(1, 0.5,1, 0.5);
+	    gfx_ui_meter(this.r.value);
+    ui_pop();
+	  
+  ui_pop();
+  
+  height = ui_height();
+  handle_height = uix_control_slider_handle_height();
+    
+  p = gfx_ui_meter_calc_relative_pos(range_high);
+  ui_split_top(height * (1-p) - handle_height/2);
+    //ui_color(120, 120, 120, 0.4);
+    //ui_fill();
+  ui_pop();
+    
+  p = gfx_ui_meter_calc_relative_pos(range_low);
+  ui_split_bottom(height * p - handle_height/2);
+    //ui_color(0, 0, 0, 0.2);
+    //ui_fill();
+  ui_pop();
+
+  uix_control_slider_v(value, range_low, range_high, curve_bias, hasDefault, defaultValue, 0, 0);
+);
+
+function gfx_ui_slider(slidervar*, low, high, step, title, format) (
+  ui_split_top(30);
+    //gfx_ui_metermargins(meter_numbers);
+    ui_color_text();
+    ui_text(title);
+  ui_pop();
+  
+  ui_split_bottom(30);
+    //gfx_ui_metermargins(meter_numbers);
+    ui_color_text();
+    sprintf(#uix_slider_value, format, slidervar);
+    ui_text(#uix_slider_value); 
+  ui_pop();
+  
+  
+  gfx_ui_margins(0, 15, 0, 15);
+  uix_control_slider_v(slidervar, low, high, 0, 0, 0, 0, 1);
+  //ui_debug();
 );
